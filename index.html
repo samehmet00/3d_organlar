@@ -3,104 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anatomi Pro 4.1 | Fix Edition</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>Anatomi Pro 5.2 | Clean UI Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --sidebar-width: 280px;
-            --primary: #0f172a;
-            --secondary: #1e293b;
-            --accent: #0ea5e9;
-            --text-light: #e2e8f0;
-            --glass-bg: rgba(15, 23, 42, 0.85);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-            --transition: all 0.3s ease;
+            --sidebar-width: 300px;
+            --primary-dark: #0f172a;
+            --secondary-dark: #1e293b;
+            --accent-blue: #0ea5e9;
+            --text-main: #f1f5f9;
+            --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body { 
             margin: 0; padding: 0;
             background: #020617; 
             font-family: 'Inter', sans-serif;
-            display: flex; height: 100vh; overflow: hidden; color: var(--text-light);
+            display: flex; height: 100vh; overflow: hidden; color: var(--text-main);
         }
 
-        /* --- SOL MENÜ --- */
+        /* --- MENÜ BUTONU (FIXED & ALIGNED) --- */
+        #menu-toggle {
+            position: fixed; top: 15px; left: 15px;
+            z-index: 1200; background: var(--accent-blue);
+            color: white; border: none; width: 42px; height: 42px;
+            border-radius: 10px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+            font-size: 20px; display: flex; align-items: center; justify-content: center;
+            transition: var(--transition-smooth);
+        }
+        #menu-toggle:hover { background: #0284c7; transform: scale(1.05); }
+
+        /* --- SOL MENÜ (SIDEBAR) --- */
         #sidebar {
             width: var(--sidebar-width);
-            background: var(--secondary);
+            background: var(--secondary-dark);
             display: flex; flex-direction: column;
-            border-right: var(--glass-border);
-            z-index: 10;
+            position: fixed; left: 0; top: 0; bottom: 0;
+            transform: translateX(0);
+            transition: var(--transition-smooth);
+            z-index: 1000;
+            box-shadow: 15px 0 50px rgba(0,0,0,0.6);
+            border-right: 1px solid rgba(255,255,255,0.05);
         }
 
-        .brand {
-            padding: 25px; font-weight: 800; font-size: 1.2rem;
-            background: linear-gradient(to right, var(--text-light), var(--accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-align: center;
+        #sidebar.hidden { transform: translateX(-100%); }
+
+        .sidebar-header {
+            padding: 20px 20px 20px 70px; /* Buton için soldan boşluk bırakıldı */
+            display: flex; align-items: center;
+            height: 42px; /* Buton yüksekliği ile uyumlu */
         }
 
-        .search-box { padding: 0 20px 20px 20px; }
+        .brand-text {
+            margin: 0; color: var(--accent-blue); font-weight: 800;
+            font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase;
+        }
+
+        .search-box { padding: 10px 20px; }
         #organSearch {
-            width: 100%; padding: 12px; border-radius: 12px;
-            border: var(--glass-border); background: rgba(0,0,0,0.2); color: white;
-            outline: none;
+            width: 80%; padding: 12px 15px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(15, 23, 42, 0.5); color: white; outline: none;
+            transition: 0.3s;
         }
+        #organSearch:focus { border-color: var(--accent-blue); background: rgba(15, 23, 42, 0.8); }
 
-        .menu-items { flex-grow: 1; overflow-y: auto; }
+        .menu-items { flex-grow: 1; overflow-y: auto; padding-top: 10px; }
         .menu-item {
-            padding: 16px 25px; cursor: pointer; transition: var(--transition);
-            display: flex; align-items: center; gap: 15px;
-            border-left: 3px solid transparent; opacity: 0.6;
+            padding: 14px 25px; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; gap: 18px;
+            border-left: 4px solid transparent; opacity: 0.6;
         }
+        .menu-item:hover { background: rgba(255,255,255,0.03); opacity: 1; }
         .menu-item.active {
-            background: rgba(14, 165, 233, 0.1);
-            border-left-color: var(--accent); opacity: 1; color: var(--accent);
+            background: linear-gradient(to right, rgba(14, 165, 233, 0.1), transparent);
+            border-left-color: var(--accent-blue); color: var(--accent-blue); opacity: 1;
         }
 
-        /* --- VIEWER --- */
-        #viewer-container { flex-grow: 1; position: relative; background: radial-gradient(circle, #1e293b 0%, #020617 100%); }
+        /* --- SAĞ PANEL (VIEWER) --- */
+        #viewer-container { 
+            position: absolute; left: var(--sidebar-width);
+            right: 0; top: 0; bottom: 0;
+            transition: var(--transition-smooth);
+        }
 
+        #sidebar.hidden ~ #viewer-container { left: 0; }
+
+        #overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 900; display: none; backdrop-filter: blur(4px);
+        }
+
+        /* --- BİLGİ VE KONTROL PANELLERİ --- */
         #info-card {
-            position: absolute; top: 20px; right: 20px;
-            background: var(--glass-bg); padding: 20px; border-radius: 20px;
-            max-width: 280px; backdrop-filter: blur(15px); border: var(--glass-border);
+            position: absolute; top: 25px; right: 25px;
+            background: rgba(15, 23, 42, 0.7); padding: 22px;
+            border-radius: 24px; max-width: 260px;
+            backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         }
 
         #controls-bar {
-            position: absolute; bottom: 30px; left: 50%;
+            position: absolute; bottom: 35px; left: 50%;
             transform: translateX(-50%);
-            background: var(--glass-bg); padding: 10px 20px; border-radius: 50px;
-            display: flex; gap: 15px; backdrop-filter: blur(15px); border: var(--glass-border);
+            background: rgba(30, 41, 59, 0.6); padding: 10px 20px;
+            border-radius: 100px; display: flex; gap: 15px;
+            backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
         .control-btn {
-            background: rgba(255,255,255,0.1); border: none; color: white;
-            padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;
+            background: rgba(255,255,255,0.05); border: none; color: white;
+            padding: 10px 18px; border-radius: 50px; cursor: pointer; font-size: 13px;
+            font-weight: 600; transition: 0.3s;
         }
-        .control-btn.active { background: var(--accent); }
+        .control-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+        .control-btn.active { background: var(--accent-blue); box-shadow: 0 0 15px rgba(14, 165, 233, 0.5); }
 
-        #annotation-label {
-            position: absolute; background: var(--accent); color: white;
-            padding: 6px 12px; border-radius: 6px; font-size: 12px;
-            pointer-events: none; display: none; z-index: 1000; font-weight: bold;
+        /* --- MOBİL UYUMLULUK --- */
+        @media (max-width: 768px) {
+            #sidebar { width: 85%; }
+            #viewer-container { left: 0; }
+            #sidebar:not(.hidden) ~ #overlay { display: block; }
+            #info-card { top: 85px; left: 15px; right: 15px; max-width: none; }
+            #controls-bar { width: 92%; gap: 8px; }
+            .control-btn { padding: 12px 5px; font-size: 11px; flex: 1; }
         }
 
-        #loading-screen {
-            position: absolute; inset: 0; background: #020617;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200;
-        }
-        .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
+        #loading-screen { position: absolute; inset: 0; background: #020617; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
+        .loader { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 1s infinite linear; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="annotation-label">Bölge</div>
+    <button id="menu-toggle" onclick="toggleSidebar()">☰</button>
+    <div id="overlay" onclick="toggleSidebar()"></div>
 
     <nav id="sidebar">
-        <div class="brand">ANATOMI PRO</div>
-        <div class="search-box"><input type="text" id="organSearch" placeholder="Ara..." onkeyup="filterOrgans()"></div>
+        <div class="sidebar-header">
+            <h2 class="brand-text">ANATOMI PRO</h2>
+        </div>
+        <div class="search-box">
+            <input type="text" id="organSearch" placeholder="Bir organ arayın..." onkeyup="filterOrgans()">
+        </div>
         <div class="menu-items">
             <div class="menu-item active" onclick="changeOrgan('kalp', this)"><i>❤️</i> <span>Kalp</span></div>
             <div class="menu-item" onclick="changeOrgan('akciger', this)"><i>🫁</i> <span>Akciğer</span></div>
@@ -109,16 +156,29 @@
             <div class="menu-item" onclick="changeOrgan('goz', this)"><i>👁️</i> <span>Göz</span></div>
             <div class="menu-item" onclick="changeOrgan('kulak', this)"><i>👂</i> <span>Kulak</span></div>
         </div>
+        <div style="padding: 20px; text-align: center; font-size: 10px; opacity: 0.3;">
+            PREMIUM ATLAS v5.2
+        </div>
     </nav>
 
     <div id="viewer-container">
-        <div id="loading-screen"><div class="loader"></div></div>
-        <div id="info-card"><h2 id="organ-title">Kalp</h2><p id="organ-desc">Yükleniyor...</p></div>
+        <div id="loading-screen">
+            <div class="loader"></div>
+            <p style="margin-top:15px; font-size: 13px; letter-spacing: 1px; opacity: 0.6;">YAPILAR YÜKLENİYOR...</p>
+        </div>
+        
+        <div id="info-card">
+            <h3 id="organ-title" style="margin:0 0 10px 0; color:var(--accent-blue); font-size: 20px;">Kalp</h3>
+            <p id="organ-desc" style="margin:0; font-size: 14px; line-height: 1.6; opacity: 0.8">Yükleniyor...</p>
+        </div>
+
         <div id="controls-bar">
             <button class="control-btn" id="xrayBtn" onclick="toggleXRay()">💀 X-Ray</button>
-            <button class="control-btn active" id="rotateBtn" onclick="toggleRotate()">🔄 Dönüş</button>
+            <button class="control-btn active" id="rotateBtn" onclick="toggleRotate()">🔄 Otomatik</button>
             <button class="control-btn" onclick="resetView()">🎯 Reset</button>
         </div>
+
+        <div id="annotation-label" style="position: absolute; background: var(--accent-blue); color: white; padding: 6px 12px; border-radius: 8px; font-size: 12px; display: none; pointer-events: none; z-index: 100; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4);"></div>
     </div>
 
     <script type="importmap">
@@ -140,15 +200,14 @@
         
         const loader = new GLTFLoader();
         const container = document.getElementById('viewer-container');
-        const infoCard = { title: document.getElementById('organ-title'), desc: document.getElementById('organ-desc') };
 
         const organInfo = {
-            'kalp': { title: 'Kalp', desc: 'Dolaşım sisteminin merkezi pompası.' },
-            'akciger': { title: 'Akciğer', desc: 'Solunum sisteminin ana organı.' },
-            'karaciger': { title: 'Karaciğer', desc: 'Vücudun en büyük iç organı ve kimya fabrikası.' },
-            'bobrek': { title: 'Böbrek', desc: 'Kanı filtreleyen boşaltım sistemi organı.' },
-            'goz': { title: 'Göz', desc: 'Görme duyusu organı. Işığı sinyallere dönüştürür.' },
-            'kulak': { title: 'Kulak', desc: 'İşitme ve denge organı.' }
+            'kalp': { title: 'Kalp', desc: 'İnsan vücudunun motoru olan bu organ, günde yaklaşık 100 bin kez çarpar.' },
+            'akciger': { title: 'Akciğer', desc: 'Oksijen alıp karbondioksit verdiğimiz temel solunum organı.' },
+            'karaciger': { title: 'Karaciğer', desc: 'Vücudun toksinlerden arınmasını sağlayan en büyük iç organ.' },
+            'bobrek': { title: 'Böbrek', desc: 'Kanı süzerek atık maddelerin idrarla atılmasını sağlar.' },
+            'goz': { title: 'Göz', desc: 'Işığı odaklayarak görüntüyü beyne ileten optik mucize.' },
+            'kulak': { title: 'Kulak', desc: 'Ses dalgalarını algılayan ve dengeyi sağlayan karmaşık yapı.' }
         };
 
         init();
@@ -156,23 +215,18 @@
 
         function init() {
             scene = new THREE.Scene();
-            
-            // 1. DÜZELTME: near ve far değerleri genişletildi
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 10000);
-
-            // 2. DÜZELTME: logarithmicDepthBuffer: true (Gözdeki bozulmayı çözer)
+            
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             container.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-            scene.add(ambientLight);
-            
-            const mainLight = new THREE.DirectionalLight(0xffffff, 2);
-            mainLight.position.set(5, 10, 7);
-            scene.add(mainLight);
+            scene.add(new THREE.AmbientLight(0xffffff, 1.4));
+            const light = new THREE.DirectionalLight(0xffffff, 2.8);
+            light.position.set(5, 10, 7);
+            scene.add(light);
 
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
@@ -182,65 +236,73 @@
             window.addEventListener('resize', onWindowResize);
         }
 
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+            const btn = document.getElementById('menu-toggle');
+            btn.innerText = sidebar.classList.contains('hidden') ? "☰" : "✕";
+            setTimeout(onWindowResize, 400);
+        }
+
         function loadModel(modelPath) {
             document.getElementById('loading-screen').style.display = 'flex';
             if (currentModel) scene.remove(currentModel);
 
             loader.load(modelPath, (gltf) => {
                 currentModel = gltf.scene;
-                
                 const box = new THREE.Box3().setFromObject(currentModel);
                 const center = box.getCenter(new THREE.Vector3());
                 const size = box.getSize(new THREE.Vector3());
                 const maxDim = Math.max(size.x, size.y, size.z);
 
-                // 3. DÜZELTME: Dinamik Zoom Sınırları (Akciğer gibi büyük organlar için)
                 controls.target.copy(center);
-                controls.minDistance = maxDim * 0.5; // Çok fazla içine girmeyi engelle
-                controls.maxDistance = maxDim * 10;  // Uzaklaşma sınırını modele göre genişlet
+                controls.minDistance = maxDim * 0.4;
+                controls.maxDistance = maxDim * 10;
                 
                 const fov = camera.fov * (Math.PI / 180);
-                let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.5;
+                let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.6;
                 camera.position.set(center.x, center.y, center.z + cameraZ);
                 
                 controls.update();
-
-                currentModel.traverse((child) => {
-                    if (child.isMesh) {
-                        child.material.side = THREE.DoubleSide; // İç yüzeylerin görünmesini sağlar
-                        child.material.roughness = 0.5;
-                    }
-                });
-
                 scene.add(currentModel);
                 if(isXRay) applyXRay();
                 document.getElementById('loading-screen').style.display = 'none';
             });
         }
 
-        // UI ve Diğer Fonksiyonlar
-        window.toggleXRay = function() { isXRay = !isXRay; document.getElementById('xrayBtn').classList.toggle('active', isXRay); applyXRay(); }
+        window.toggleXRay = function() { 
+            isXRay = !isXRay; 
+            document.getElementById('xrayBtn').classList.toggle('active', isXRay); 
+            applyXRay(); 
+        }
+
         function applyXRay() {
             if (currentModel) {
-                currentModel.traverse((child) => {
-                    if (child.isMesh) {
-                        child.material.transparent = true;
-                        child.material.opacity = isXRay ? 0.2 : 1.0;
-                    }
-                });
+                currentModel.traverse(n => { if (n.isMesh) { n.material.transparent = true; n.material.opacity = isXRay ? 0.25 : 1.0; } });
             }
         }
 
-        window.toggleRotate = function() { isRotating = !isRotating; controls.autoRotate = isRotating; document.getElementById('rotateBtn').classList.toggle('active', isRotating); }
+        window.toggleRotate = function() { 
+            isRotating = !isRotating; 
+            controls.autoRotate = isRotating; 
+            document.getElementById('rotateBtn').classList.toggle('active', isRotating); 
+        }
+
         window.resetView = function() { loadModel(currentOrganKey + '.glb'); }
 
-        window.changeOrgan = function(type, element) {
+        window.changeOrgan = function(type, el) {
             currentOrganKey = type;
-            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
-            element.classList.add('active');
-            infoCard.title.innerText = organInfo[type].title;
-            infoCard.desc.innerText = organInfo[type].desc;
+            document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('organ-title').innerText = organInfo[type].title;
+            document.getElementById('organ-desc').innerText = organInfo[type].desc;
             loadModel(type + '.glb');
+            if(window.innerWidth < 768) toggleSidebar(); 
+        }
+
+        window.filterOrgans = function() {
+            const val = document.getElementById('organSearch').value.toLowerCase();
+            document.querySelectorAll('.menu-item').forEach(i => i.style.display = i.innerText.toLowerCase().includes(val) ? 'flex' : 'none');
         }
 
         function onWindowResize() {
@@ -252,8 +314,8 @@
         function animate() {
             requestAnimationFrame(animate);
             if (currentModel && currentOrganKey === 'kalp' && !isXRay) {
-                const scale = 1 + Math.abs(Math.sin(Date.now() * 0.003)) * 0.05;
-                currentModel.scale.set(scale, scale, scale);
+                const s = 1 + Math.abs(Math.sin(Date.now() * 0.003)) * 0.04;
+                currentModel.scale.set(s, s, s);
             }
             controls.update();
             renderer.render(scene, camera);
