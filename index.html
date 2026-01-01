@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Anatomi Pro - İnteraktif Atlas</title>
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --primary-color: #1a202c;
+            --accent-color: #3182ce;
+            --bg-color: #ffffff;
+            --transition-speed: 0.4s;
+        }
+
+        body { 
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SOL MENÜ (DARALTILABİLİR) --- */
+        #sidebar {
+            width: var(--sidebar-width);
+            background: #f7fafc;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            transition: width var(--transition-speed) ease;
+            position: relative;
+            z-index: 100;
+        }
+
+        #sidebar.collapsed {
+            width: 70px;
+        }
+
+        .toggle-btn {
+            position: absolute;
+            right: -15px;
+            top: 20px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .logo {
+            padding: 30px 10px;
+            font-weight: 800;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            color: var(--primary-color);
+        }
+
+        .menu-items { flex-grow: 1; overflow-x: hidden; }
+
+        .menu-item {
+            padding: 18px 25px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-left: 4px solid transparent;
+            white-space: nowrap;
+        }
+
+        .menu-item:hover { background: #edf2f7; }
+        .menu-item.active {
+            background: #ebf8ff;
+            border-left-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .menu-item span { transition: opacity 0.3s; }
+        #sidebar.collapsed .menu-item span { opacity: 0; pointer-events: none; }
+
+        /* --- SAĞ PANEL & 3D --- */
+        #viewer-container {
+            flex-grow: 1;
+            position: relative;
+            background: radial-gradient(circle, #ffffff 0%, #f1f1f1 100%);
+        }
+
+        #info-card {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 320px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* Tıklanan Parça Etiketi */
+        #annotation-label {
+            position: absolute;
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        #annotation-label::after {
+            content: '';
+            position: absolute;
+            top: 100%; left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--primary-color) transparent transparent transparent;
+        }
+
+        #loading-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="annotation-label">Parça İsmi</div>
+
+    <nav id="sidebar">
+        <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+        <div class="logo">ANATOMİ 3D</div>
+        <div class="menu-items">
+            <div class="menu-item active" onclick="changeOrgan('kalp', this)">
+                <i>❤️</i> <span>Kalp (Heart)</span>
+            </div>
+            <div class="menu-item" onclick="changeOrgan('goz', this)">
+                <i>👁️</i> <span>Göz (Eye)</span>
+            </div>
+        </div>
+    </nav>
+
+    <div id="viewer-container">
+        <div id="loading-screen">Veriler Yükleniyor...</div>
+        
+        <div id="info-card">
+            <h2 id="organ-title" style="margin-top:0">Kalp</h2>
+            <p id="organ-desc">Yükleniyor...</p>
+            <hr style="opacity: 0.1">
+            <small style="color: #666">💡 Parçaları isimlendirmek için organın üzerine tıklayın.</small>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, controls, currentModel;
+        const loader = new GLTFLoader();
+        const container = document.getElementById('viewer-container');
+        const loadingScreen = document.getElementById('loading-screen');
+        const annotationLabel = document.getElementById('annotation-label');
+        
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        const organInfo = {
+            'kalp': { title: 'Kalp', desc: 'Vücudun motoru olan kalp, her gün yaklaşık 100.000 kez çarpar.' },
+            'goz': { title: 'Göz', desc: 'Göz, beyne saniyede 10 milyon bit veri gönderen muazzam bir sensördür.' },
+        };
+
+        init();
+        animate();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff);
+
+            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0, 8);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
+            scene.add(ambientLight);
+            
+            const light = new THREE.DirectionalLight(0xffffff, 2);
+            light.position.set(5, 10, 7);
+            scene.add(light);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            loadModel('kalp.glb');
+
+            window.addEventListener('resize', onWindowResize);
+            
+            // Tıklama Olayı (Raycasting)
+            container.addEventListener('mousedown', onPointerDown);
+        }
+
+        function onPointerDown(event) {
+            // Mouse koordinatlarını normalize et (-1 ile +1 arası)
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                const object = intersects[0].object;
+                const partName = object.name || "Bilinmeyen Bölge";
+                
+                // Etiketi göster
+                annotationLabel.style.display = 'block';
+                annotationLabel.innerText = partName.replace(/_/g, ' ');
+                annotationLabel.style.left = event.clientX + 'px';
+                annotationLabel.style.top = (event.clientY - 40) + 'px';
+
+                // 3D Parçayı vurgula (opsiyonel)
+                if(object.material) {
+                    const oldColor = object.material.color.getHex();
+                    object.material.color.setHex(0xff0000);
+                    setTimeout(() => object.material.color.setHex(oldColor), 500);
+                }
+            } else {
+                annotationLabel.style.display = 'none';
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            setTimeout(onWindowResize, 400); // Animasyon sonrası boyutu güncelle
+        }
+        window.toggleSidebar = toggleSidebar;
+
+        function loadModel(modelPath) {
+            loadingScreen.style.display = 'flex';
+            if (currentModel) scene.remove(currentModel);
+
+            loader.load(modelPath, (gltf) => {
+                currentModel = gltf.scene;
+                const box = new THREE.Box3().setFromObject(currentModel);
+                const center = box.getCenter(new THREE.Vector3());
+                currentModel.position.sub(center);
+                scene.add(currentModel);
+                loadingScreen.style.display = 'none';
+            });
+        }
+
+        window.changeOrgan = function(type, element) {
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('organ-title').innerText = organInfo[type].title;
+            document.getElementById('organ-desc').innerText = organInfo[type].desc;
+            annotationLabel.style.display = 'none';
+            loadModel(type + '.glb');
+        }
+
+        function onWindowResize() {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (currentModel && document.getElementById('organ-title').innerText === 'Kalp') {
+                const pulse = 1 + Math.abs(Math.sin(Date.now() * 0.005)) * 0.05;
+                currentModel.scale.set(pulse, pulse, pulse);
+            }
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
